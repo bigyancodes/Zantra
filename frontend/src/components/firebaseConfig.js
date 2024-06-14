@@ -1,6 +1,6 @@
 // firebaseConfig.js
 import { initializeApp } from "firebase/app";
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, signInWithPopup, createUserWithEmailAndPassword, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDK8UdlDHWsPzcoFcRwf2p6zarQH8HSYpA",

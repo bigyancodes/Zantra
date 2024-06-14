@@ -1,52 +1,71 @@
-// signupModal.js
 import React, { useState } from 'react';
-import { auth } from './firebaseConfig';
-import { RecaptchaVerifier, signInWithPhoneNumber, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup } from "firebase/auth";
+import axios from 'axios';
 import './signupModal.css';
 
 const Signup = ({ closeModal }) => {
   const [phone, setPhone] = useState('');
-  const [countryCode, setCountryCode] = useState('+977'); // Default country code for Nepal
+  const [otp, setOtp] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
 
-  const handlePhoneSignup = async () => {
-    const recaptchaVerifier = new RecaptchaVerifier('recaptcha-container', { size: 'invisible' }, auth);
+  const generateOtp = () => {
+    // Generate a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(otp);
+    return otp;
+  };
+
+  const handleSendOtp = async () => {
+    const otp = generateOtp();
 
     try {
-      const result = await signInWithPhoneNumber(auth, `${countryCode}${phone}`, recaptchaVerifier);
-      // Handle the confirmation result here
+      console.log('Sending OTP to:', phone);
+      const response = await axios.post('https://sms.aakashsms.com/sms/v3/send', {
+        auth_token: 'f6e7cbca95b302dd81f2e4b2c471c386c5e72cab02d1f89e50c80c8178bc2a3d', // Your active auth token
+        to: phone,
+        text: `Your OTP code is: ${otp}`
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.error) {
+        console.error('Error response from Aakash SMS:', response.data);
+        alert('Failed to send OTP. Please try again.');
+      } else {
+        setOtpSent(true);
+        console.log('OTP sent successfully:', response.data);
+        alert('OTP sent successfully!');
+      }
     } catch (error) {
-      alert(error.message);
+      console.error('Request to Aakash SMS failed:', error.response ? error.response.data : error.message);
+      alert('Failed to send OTP. Please try again.');
+    }
+  };
+
+  const handleVerifyOtp = () => {
+    if (otp === generatedOtp) {
+      alert('Phone number verified!');
+      closeModal();
+    } else {
+      alert('Invalid OTP. Please try again.');
     }
   };
 
   const handleGoogleSignup = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      alert('Signup successful with Google!');
-    } catch (error) {
-      alert(error.message);
-    }
+    alert('Google signup clicked');
+    // Handle Google signup
   };
 
   const handleFacebookSignup = async () => {
-    const provider = new FacebookAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      alert('Signup successful with Facebook!');
-    } catch (error) {
-      alert(error.message);
-    }
+    alert('Facebook signup clicked');
+    // Handle Facebook signup
   };
 
   const handleAppleSignup = async () => {
-    const provider = new OAuthProvider('apple.com');
-    try {
-      await signInWithPopup(auth, provider);
-      alert('Signup successful with Apple!');
-    } catch (error) {
-      alert(error.message);
-    }
+    alert('Apple signup clicked');
+    // Handle Apple signup
   };
 
   return (
@@ -60,14 +79,6 @@ const Signup = ({ closeModal }) => {
             </button>
           </div>
           <div className="form-group">
-            <select
-              value={countryCode}
-              onChange={(e) => setCountryCode(e.target.value)}
-              className="country-code-select"
-            >
-              <option value="+977">Nepal (+977)</option>
-              {/* Add more country code options as needed */}
-            </select>
             <input
               type="tel"
               placeholder="Phone Number"
@@ -75,21 +86,33 @@ const Signup = ({ closeModal }) => {
               onChange={(e) => setPhone(e.target.value)}
               className="phone-input"
             />
-          </div>
-          <div className="form-group">
-            <button onClick={handlePhoneSignup} className="primary-button">
-              Continue
+            <button onClick={handleSendOtp} className="primary-button">
+              {otpSent ? 'Resend OTP' : 'Send OTP'}
             </button>
           </div>
+          {otpSent && (
+            <div className="form-group">
+              <input
+                type="text"
+                placeholder="Enter OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                className="otp-input"
+              />
+              <button onClick={handleVerifyOtp} className="primary-button">
+                Verify OTP
+              </button>
+            </div>
+          )}
           <div className="divider">or</div>
-          <div className="form-group">
-            <button onClick={handleFacebookSignup} className="social-button facebook-button">
-              Continue with Facebook
-            </button>
-          </div>
           <div className="form-group">
             <button onClick={handleGoogleSignup} className="social-button google-button">
               Continue with Google
+            </button>
+          </div>
+          <div className="form-group">
+            <button onClick={handleFacebookSignup} className="social-button facebook-button">
+              Continue with Facebook
             </button>
           </div>
           <div className="form-group">
@@ -97,11 +120,6 @@ const Signup = ({ closeModal }) => {
               Continue with Apple
             </button>
           </div>
-          {/* <div className="form-group">
-            <button onClick={handleEmailSignup} className="email-button">
-              Continue with email
-            </button>
-          </div> */}
         </div>
       </div>
     </div>
